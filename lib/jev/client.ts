@@ -64,8 +64,8 @@ export async function evaluateQuestions(input: {
   questions: Record<string, JevQuestion>
   model?: string
 }): Promise<JevEvaluation> {
-  const { requireEnv } = await import("../env")
-  const apiKey = requireEnv("AI_GATEWAY_API_KEY")
+  const { env } = await import("../env")
+  const apiKey = env.aiGatewayJevKey()
   const body = {
     state: input.state,
     model: input.model ?? process.env.JEV_MODEL ?? "jev-latest",
