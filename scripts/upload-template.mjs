@@ -22,11 +22,13 @@ if (!process.env.BLOB_READ_WRITE_TOKEN) {
 }
 
 const content = readFileSync(zipPath)
+// Private access: the zip needs auth to fetch. The fork flow signs a
+// short-lived download URL at request time (lib/templates.ts).
 const blob = await put("templates/storefront.zip", content, {
-  access: "public",
+  access: "private",
   addRandomSuffix: false,
 })
 
 console.log(`Uploaded ${zipPath} (${content.length} bytes)`)
-console.log(`Public URL: ${blob.url}`)
+console.log(`Blob URL (permanent, auth-required): ${blob.url}`)
 console.log("Set this as TEMPLATE_STOREFRONT_URL in .env.local and in the Vercel project env.")

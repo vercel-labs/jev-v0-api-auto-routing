@@ -4,7 +4,7 @@ import { readTenantKeys } from "../orgs/tenant-keys"
 import { evaluateQuestions, JevUnavailableError } from "../jev/client"
 import { routingQuestions, ROUTING_QUESTIONS_VERSION } from "../jev/questions"
 import { POLICY_VERSION, routeChat, type ExplicitSelection, type RoutingDecision } from "../routing/policy"
-import type { ChatTemplate } from "../templates"
+import { resolveForkUrl, type ChatTemplate } from "../templates"
 
 export type V0ModelId = "v0-mini" | "v0-pro" | "v0-max" | "v0-max-fast"
 
@@ -143,7 +143,7 @@ export async function createForkedChat(input: {
   }
 
   const forked = await v0.chats.createFromZip({
-    url: input.template.zipUrl,
+    url: await resolveForkUrl(input.template),
     metadata,
   })
   if (forked.error || !forked.data?.chat.id) {

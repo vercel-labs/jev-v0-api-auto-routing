@@ -66,43 +66,57 @@ export async function evaluateQuestions(input: {
 }): Promise<JevEvaluation> {
   const { env } = await import("../env")
   const apiKey = env.aiGatewayJevKey()
-  const body = {
+  const body = JSON.stringify({
     state: input.state,
     model: input.model ?? process.env.JEV_MODEL ?? "jev-latest",
     questions: input.questions,
-  }
-
-  const res = await fetch(GATEWAY_SYSTEMONE_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
   })
 
-  if (!res.ok) {
+  // One retry for transient Gateway failures (429 / 5xx). A Jev outage must
+  // degrade to the policy fallback, not fail the chat, but a single blip
+  // should not silently misroute an otherwise-routable prompt.
+  let lastError: JevUnavailableError | null = null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 600))
+    }
+    const res = await fetch(GATEWAY_SYSTEMONE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body,
+    })
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        model?: string
+        answers?: JevAnswers
+        usage?: { input_tokens?: number; output_tokens?: number }
+      }
+      if (!data.answers) {
+        throw new JevUnavailableError("Jev response missing answers")
+      }
+      return {
+        model: data.model ?? "unknown",
+        answers: data.answers,
+        usage: data.usage,
+        raw: data,
+      }
+    }
+
     const text = await res.text().catch(() => "")
-    throw new JevUnavailableError(
+    lastError = new JevUnavailableError(
       `Jev request failed: HTTP ${res.status} ${text.slice(0, 300)}`,
       res.status,
     )
+    // Non-retryable: auth/allowlist problems will not fix themselves.
+    if (res.status !== 429 && res.status < 500) break
   }
-
-  const data = (await res.json()) as {
-    model?: string
-    answers?: JevAnswers
-    usage?: { input_tokens?: number; output_tokens?: number }
+  if (lastError) {
+    console.warn(`[jev] ${lastError.message}`)
+    throw lastError
   }
-
-  if (!data.answers) {
-    throw new JevUnavailableError("Jev response missing answers")
-  }
-
-  return {
-    model: data.model ?? "unknown",
-    answers: data.answers,
-    usage: data.usage,
-    raw: data,
-  }
+  throw new JevUnavailableError("Jev request failed without a response")
 }
