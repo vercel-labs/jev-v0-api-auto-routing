@@ -1,15 +1,26 @@
 import type { V0StreamResult } from "v0"
 
+export type StreamMeta = {
+  chatId: string
+  decision?: unknown
+  jev?: unknown
+  messageId?: string
+}
+
 /**
  * Re-emits a v0 stream as a simple text/event-stream with plain content
  * deltas, so the demo UI does not need to parse v0's SSE format.
- * Each event: data: {"content": "..."} (delta) or {"usage": {...}}.
+ * First event (if meta given): data: {"meta": {...}} — chat id and routing
+ * decision. Then: data: {"content": "..."} (delta) or {"usage": {...}}.
  * Final event: data: {"done": true}.
  */
-export function toPlainTextStream(result: V0StreamResult): Response {
+export function toPlainTextStream(result: V0StreamResult, meta?: StreamMeta): Response {
   const encoder = new TextEncoder()
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
+      if (meta) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ meta })}\n\n`))
+      }
       let last = ""
       try {
         for await (const update of result.stream) {

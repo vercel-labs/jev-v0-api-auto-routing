@@ -4,14 +4,17 @@ import { readTenantKeys } from "../orgs/tenant-keys"
 import { evaluateQuestions, JevUnavailableError } from "../jev/client"
 import { routingQuestions, ROUTING_QUESTIONS_VERSION } from "../jev/questions"
 import { POLICY_VERSION, routeChat, type ExplicitSelection, type RoutingDecision } from "../routing/policy"
+import type { ChatTemplate } from "../templates"
 
 export type V0ModelId = "v0-mini" | "v0-pro" | "v0-max" | "v0-max-fast"
 
 export type CreateChatResult = {
   chatId: string
-  messageId: string
+  messageId?: string
   decision: RoutingDecision
   jev?: { model: string; raw: unknown }
+  /** Present for template forks: the first generation is already running. */
+  stream?: import("v0").V0StreamResult
 }
 
 function clientForTeam(teamId: string) {
@@ -100,8 +103,69 @@ export async function createRoutedChat(input: {
   }
 }
 
-export async function getRoutedModel(teamId: string, chatId: string): Promise<V0ModelId> {
-  const v0 = clientForTeam(teamId)
+/**
+ * Template fork flow: the chat is created from a template zip (seeded, no
+ * generation, no model choice yet), then Jev classifies the first change
+ * request and the routed model is attached to the first billable message.
+ * Every turn afterwards rides the same model and its warm cache.
+ */
+export async function createForkedChat(input: {
+  teamId: string
+  prompt: string
+  template: ChatTemplate
+  explicitModelId?: ExplicitSelection
+}): Promise<CreateChatResult> {
+  const v0 = clientForTeam(input.teamId)
+
+  let answers
+  let jevModel = "not-consulted"
+  let jevRaw: unknown = null
+  try {
+    const evaluation = await evaluateQuestions({
+      state: buildState(input.prompt),
+      questions: routingQuestions(),
+    })
+    answers = evaluation.answers
+    jevModel = evaluation.model
+    jevRaw = evaluation.raw
+  } catch (error) {
+    if (!(error instanceof JevUnavailableError)) throw error
+  }
+
+  const decision = routeChat({ answers, explicitModelId: input.explicitModelId })
+  const metadata = {
+    routedModelId: decision.modelId,
+    policyVersion: POLICY_VERSION,
+    routingQuestionsVersion: ROUTING_QUESTIONS_VERSION,
+    jevModel,
+    routingDecision: JSON.stringify(decision),
+    templateId: input.template.id,
+  }
+
+  const forked = await v0.chats.createFromZip({
+    url: input.template.zipUrl,
+    metadata,
+  })
+  if (forked.error || !forked.data?.chat.id) {
+    throw new Error(`Could not fork template chat: ${JSON.stringify(forked.error)}`)
+  }
+  const chatId = forked.data.chat.id
+
+  const stream = await v0.messages.sendStream({
+    chatId,
+    message: input.prompt,
+    modelConfiguration: { modelId: decision.modelId, imageGenerations: false },
+  })
+
+  return {
+    chatId,
+    decision,
+    jev: jevRaw ? { model: jevModel, raw: jevRaw } : undefined,
+    stream,
+  }
+}
+
+export async function getRoutedModel(teamId: string, chatId: string): Promise<V0ModelId> {  const v0 = clientForTeam(teamId)
   const res = await v0.chats.get({ chatId })
   if (res.error || !res.data) {
     throw new Error(`Could not load chat ${chatId}`)

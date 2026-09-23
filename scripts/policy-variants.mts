@@ -89,10 +89,14 @@ function pickModel(d: Decision, variant: string): string | null {
     if (d.taskType !== "unclear" && d.complexity <= 2 && proceed >= 0.5) return "v0-mini"
     return "v0-pro"
   }
+  if (variant === "v0.2-mini-cx3") {
+    if (d.complexity <= 3 && proceed >= 0.5) return "v0-mini"
+    return "v0-pro"
+  }
   return "v0-pro"
 }
 
-const variants = ["v0.1.0", "v0.2-mini-cx2", "v0.2-mini-cx1", "v0.2-mini-clear-cx2"]
+const variants = ["v0.1.0", "v0.2-mini-cx2", "v0.2-mini-cx3", "v0.2-mini-cx1", "v0.2-mini-clear-cx2"]
 const decisions: Record<string, Decision> = {}
 for (const chat of replay.perChat) {
   decisions[chat.chatId] = {

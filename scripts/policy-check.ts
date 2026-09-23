@@ -22,9 +22,12 @@ const mk = (
 })
 
 const cases: Array<[string, Parameters<typeof routeChat>[0]["answers"], string]> = [
-  ["clear styling", mk("styling-copy", 0.9, 1, 0.9), "v0-mini"],
+  ["simple styling diff", mk("styling-copy", 0.9, 1, 0.9), "v0-mini"],
+  ["standard feature diff", mk("feature", 0.8, 3, 0.8), "v0-mini"],
+  ["small feature diff", mk("feature", 0.8, 2, 0.8), "v0-mini"],
   ["styling, unclear requirements", mk("styling-copy", 0.9, 1, 0.3), "v0-pro"],
-  ["standard feature", mk("feature", 0.8, 3, 0.8), "v0-pro"],
+  ["unclear, cannot proceed", mk("unclear", 0.9, 1, 0.3), "v0-pro"],
+  ["large feature", mk("feature", 0.8, 4, 0.8), "v0-pro"],
   ["hard debugging", mk("debugging", 0.8, 4.5, 0.8), "v0-max"],
   ["architecture", mk("architecture", 0.9, 5, 0.9), "v0-max"],
   ["low confidence", mk("unclear", 0.3, 3, 0.8), "v0-pro"],

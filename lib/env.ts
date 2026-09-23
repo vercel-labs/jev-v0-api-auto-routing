@@ -17,4 +17,6 @@ export const env = {
   v0RootKey: () => process.env.ROOT_V0_KEY,
   defaultTeamV0Key: () => process.env.DEFAULT_TEAM_V0_KEY,
   defaultTenantTeamId: () => requireEnv("DEFAULT_TEAM_ID"),
+  /** Public URL of the storefront template zip (Vercel Blob). */
+  storefrontZipUrl: () => process.env.TEMPLATE_STOREFRONT_URL,
 }
