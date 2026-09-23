@@ -1,0 +1,78 @@
+{
+  "tier": "T1",
+  "t1_blocking_reason": null,
+  "profile": {
+    "source": "explicit",
+    "path": "/Users/diegodemiguel/.diagram-design/profiles/vercel.md",
+    "name": "Vercel",
+    "slug": "vercel",
+    "opinions": {
+      "accent_budget": 2,
+      "radius_range": [
+        0,
+        8
+      ],
+      "shadow_policy": "none",
+      "dark_mode": false,
+      "glow": false
+    },
+    "inherited": []
+  },
+  "checks": {
+    "profile_gates": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": ""
+    },
+    "self_check": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "OK /Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/jev-agent-flow-round.html"
+    },
+    "check_slop": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "OK /Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/jev-agent-flow-round.html\nSummary: 1 file(s), 0 error(s), 0 warning(s)."
+    },
+    "verify-geometry": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "jev-agent-flow-round.html:194: label mask (210,136 160x12) is clipped by node (280,64 260x84) declared later at line 368 (overlap 90x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:196: label mask (472,244 156x12) is clipped by node (280,232 260x84) declared later at line 373 (overlap 68x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:199: label mask (594,372 152x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 62x8px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:200: label mask (460,428 160x12) is clipped by node (280,400 260x84) declared later at line 378 (overlap 80x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:265: label mask (478,124 108x12) is clipped by node (280,64 260x84) declared later at line 368 (overlap 62x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:267: label mask (308,336 32x12) is clipped by node (208,272 160x72) declared later at line 453 (overlap 32x8px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:355: label mask (104,172 120x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 48x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:356: label mask (140,256 112x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 76x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:357: label mask (104,352 130x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 58x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:360: label mask (460,376 116x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 116x4px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:361: label mask (590,86 110x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 66x12px) - move the label onto a free segment of its connector\njev-agent-flow-round.html:362: label mask (556,254 108x12) is clipped by node (176,80 480x300) declared later at line 410 (overlap 100x12px) - move the label onto a free segment of its connector\nSummary: 1 file(s) checked, 12 finding(s)."
+    },
+    "card-lines": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "Summary: 1 file(s) checked, 0 finding(s)."
+    },
+    "verify-motion": {
+      "status": "skipped",
+      "reason": "no motion markup"
+    },
+    "verify_browser": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "Traceback (most recent call last):\n  File \"/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/.agents/skills/diagram-design-extended/scripts/verify_browser.py\", line 384, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/.agents/skills/diagram-design-extended/scripts/verify_browser.py\", line 294, in main\n    for line in json.loads(ab_eval(CLEARANCE_JS)):\n                           ~~~~~~~^^^^^^^^^^^^^^\n  File \"/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/.agents/skills/diagram-design-extended/scripts/verify_browser.py\", line 235, in ab_eval\n    out = ab(\"eval\", js)\n  File \"/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/.agents/skills/diagram-design-extended/scripts/verify_browser.py\", line 230, in ab\n    raise RuntimeError(f\"agent-browser {' '.join(args)}: {result.stderr.strip()}\")\nRuntimeError: agent-browser eval \n(() => {\n  const findings = [];\n  const groups = document.querySelectorAll(\"svg g\");\n  for (const group of groups) {\n    const rect = group.querySelector(\":scope > rect\");\n    if (!rect) continue;\n    const card = rect.getBBox();\n    if (card.width < 60 || card.height < 40) continue;\n    const texts = [...group.querySelectorAll(\":scope > text\")];\n    if (!texts.length) continue;\n    const boxes = texts.map((t) => t.getBBox());\n    const minX = Math.min(...boxes.map((b) => b.x));\n    const maxX = Math.max(...boxes.map((b) => b.x + b.width));\n    const minY = Math.min(...boxes.map((b) => b.y));\n    const maxY = Math.max(...boxes.map((b) => b.y + b.height));\n    const c = {\n      left: minX - card.x,\n      right: card.x + card.width - maxX,\n      top: minY - card.y,\n      bottom: card.y + card.height - maxY,\n    };\n    for (const [side, value] of Object.entries(c)) {\n      if (value < 8) findings.push(`FAIL clearance ${side}=${value.toFixed(1)}px < 8px: \"${texts[0].textContent.trim().slice(0, 40)}\"`);\n      else if (value < 12) findings.push(`WARN clearance ${side}=${value.toFixed(1)}px < 12px: \"${texts[0].textContent.trim().slice(0, 40)}\"`);\n    }\n  }\n  return JSON.stringify(findings);\n})()\n:"
+    },
+    "rendered-card-overlap": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "verify_browser.py did not report this rendered check (gate aborted before geometry ran)"
+    },
+    "rendered-connector-transit": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "verify_browser.py did not report this rendered check (gate aborted before geometry ran)"
+    },
+    "rendered-label-collision": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "verify_browser.py did not report this rendered check (gate aborted before geometry ran)"
+    }
+  },
+  "fix_cycles": 0,
+  "component_library": "inline-svg@1",
+  "output_files": [
+    "/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/jev-agent-flow-round.html",
+    "/Users/diegodemiguel/Development/Work/jev-v0-api-auto-routing/jev-agent-flow-round.verify.json"
+  ]
+}

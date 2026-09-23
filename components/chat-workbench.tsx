@@ -200,7 +200,7 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <section className="flex flex-col gap-4">
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 text-neutral-900 [color-scheme:light]">
           {/* template picker */}
           <div className="mb-3 flex items-center gap-2">
             <span className="text-xs font-medium text-neutral-500">Start from:</span>
@@ -212,6 +212,7 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
                   onClick={() => setMountedTemplate(null)}
                   disabled={Boolean(chatId) || streaming}
                   title="Remove template (starts a blank chat)"
+                  aria-label="Remove template (starts a blank chat)"
                   className="ml-0.5 text-neutral-400 hover:text-white disabled:opacity-30"
                 >
                   ×
@@ -241,10 +242,10 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
                     {t.name.charAt(0)}
                   </span>
                   Fork {t.name}
-                  <span className="text-neutral-400">→</span>
+                  <span className="text-neutral-400" aria-hidden="true">→</span>
                 </button>
               ))}
-              <span className="self-center text-[11px] text-neutral-400">
+              <span className="self-center text-[11px] text-neutral-500">
                 forks mount the starter repo; small changes route cheap
               </span>
             </div>
@@ -263,14 +264,14 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
                   : "Describe the app or change you want to build…"
             }
             rows={3}
-            className="w-full resize-y rounded-lg border border-neutral-300 p-3 text-sm outline-none focus:border-neutral-900"
+            className="w-full resize-y rounded-lg border border-neutral-300 bg-white p-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:border-neutral-900"
           />
           <div className="mt-3 flex items-center gap-3">
             <select
               value={selection}
               onChange={(e) => setSelection(e.target.value as ExplicitSelection)}
               disabled={Boolean(chatId)}
-              className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm disabled:opacity-50"
+              className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 disabled:opacity-50"
             >
               {(Object.keys(MODEL_LABELS) as ExplicitSelection[]).map((id) => (
                 <option key={id} value={id}>
@@ -307,11 +308,11 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
 
         <div
           ref={transcriptRef}
-          className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-4"
+          className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-4 text-neutral-900 [color-scheme:light]"
           style={{ minHeight: "20rem", maxHeight: "32rem" }}
         >
           {turns.length === 0 && (
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-neutral-500">
               {mounted
                 ? `A change request on the mounted ${mounted.name} template. Jev classifies it; simple diffs run on v0-mini.`
                 : "A blank chat starts from scratch. Watch the cost: Jev still routes, but from-scratch builds are expensive."}
@@ -334,7 +335,7 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
                     <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] font-medium text-neutral-900">
                       ${total.toFixed(4)} this turn
                     </span>
-                    <span className="font-mono text-[11px] text-neutral-400">
+                    <span className="font-mono text-[11px] text-neutral-500">
                       in {turn.usage.creditsCost.input ?? 0} · out {turn.usage.creditsCost.output ?? 0} · cache-r{" "}
                       {turn.usage.creditsCost.cacheRead ?? 0} · cache-w {turn.usage.creditsCost.cacheWrite ?? 0}
                     </span>
@@ -347,12 +348,12 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
       </section>
 
       <aside className="flex flex-col gap-4">
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 text-neutral-900 [color-scheme:light]">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
             Routing decision
           </h2>
           {!decision ? (
-            <p className="text-sm text-neutral-400">No chat routed yet.</p>
+            <p className="text-sm text-neutral-500">No chat routed yet.</p>
           ) : (
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
@@ -363,7 +364,7 @@ export default function ChatWorkbench({ templates }: { templates: TemplateOption
               </div>
               <p className="text-neutral-700">{decision.reason}</p>
               {decision.fallback && (
-                <p className="text-xs text-amber-600">Fallback decision (Jev unavailable).</p>
+                <p className="text-xs text-amber-700">Fallback decision (Jev unavailable).</p>
               )}
               {jevRaw !== null && (
                 <>

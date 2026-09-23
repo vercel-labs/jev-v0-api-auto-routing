@@ -9,12 +9,12 @@ export default function OrgsPage() {
       <header className="flex items-baseline justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Organizations</h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Vercel Organizations API: list teams, create child teams, mint v0 keys. Idempotent —
             provisioning an existing tenant reuses it.
           </p>
         </div>
-        <Link href="/" className="text-xs text-neutral-500 underline">
+        <Link href="/" className="text-xs text-neutral-500 underline dark:text-neutral-400">
           ← Back to routing
         </Link>
       </header>

@@ -52,12 +52,12 @@ export default function OrgsPanel() {
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+    <div className="rounded-xl border border-neutral-200 bg-white p-4 text-neutral-900 [color-scheme:light]">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
         Organizations
       </h2>
       <ul className="mb-3 space-y-1 text-sm">
-        {teams.length === 0 && <li className="text-neutral-400">No teams loaded.</li>}
+        {teams.length === 0 && <li className="text-neutral-500">No teams loaded.</li>}
         {teams.map((team) => (
           <li key={team.teamId} className="flex justify-between gap-2">
             <span className="truncate">{team.name}</span>
@@ -70,7 +70,7 @@ export default function OrgsPanel() {
           value={newTeamName}
           onChange={(e) => setNewTeamName(e.target.value)}
           placeholder="New tenant name"
-          className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-500"
         />
         <button
           onClick={provisionTeam}

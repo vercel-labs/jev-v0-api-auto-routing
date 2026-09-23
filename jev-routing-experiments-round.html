@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jev routing POC: experiments and wins</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      /* Replicate skin - diagram-design profile */
+      --paper: #fcfcfc;
+      --paper-2: #f0f0f0;
+      --ink: #202020;
+      --muted: #646464;
+      --soft: #838383;
+      --rule: rgba(32,32,32,0.12);
+      --rule-solid: #d9d9d9;
+      --accent: #ea2804;
+      --accent-deep: #cd2200;
+      --accent-tint: rgba(234,40,4,0.08);
+      --link: #005cc5;
+      --font-sans: 'Archivo', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 3rem 2rem 7rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .round { max-width: 1200px; width: 100%; }
+
+    .vswitch {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+    }
+    .variant { display: none; }
+    #v1:checked ~ .variant[data-position="1"],
+    #v2:checked ~ .variant[data-position="2"],
+    #v3:checked ~ .variant[data-position="3"],
+    #v4:checked ~ .variant[data-position="4"] { display: block; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+    .tradeoff {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      max-width: 68ch;
+    }
+    .tradeoff strong { color: var(--ink); font-weight: 600; }
+
+    figure { overflow-x: auto; }
+    svg { width: 100%; min-width: 760px; display: block; }
+
+    .vbar {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: var(--paper);
+      box-shadow: 0 4px 24px rgba(32,32,32,0.14);
+      max-width: calc(100vw - 32px);
+    }
+    .vbar label {
+      display: block;
+      padding: 8px 14px;
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .vbar label:hover { border-color: var(--muted); }
+    .vbar .pos {
+      display: block;
+      font: 600 12px/1.2 var(--font-sans);
+      color: var(--ink);
+    }
+    .vbar .dir {
+      display: block;
+      font: 400 9px/1.4 var(--font-mono);
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    #v1:checked ~ .vbar label[for="v1"],
+    #v2:checked ~ .vbar label[for="v2"],
+    #v3:checked ~ .vbar label[for="v3"],
+    #v4:checked ~ .vbar label[for="v4"] {
+      border-color: var(--accent);
+      background: var(--accent-tint);
+    }
+    #v1:focus-visible ~ .vbar label[for="v1"],
+    #v2:focus-visible ~ .vbar label[for="v2"],
+    #v3:focus-visible ~ .vbar label[for="v3"],
+    #v4:focus-visible ~ .vbar label[for="v4"] {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .vbar .hint {
+      align-self: center;
+      padding: 0 10px 0 6px;
+      border-left: 1px solid var(--rule);
+      margin-left: 4px;
+      font: 500 9px/1.5 var(--font-mono);
+      color: var(--muted);
+      max-width: 18ch;
+    }
+
+    @media print {
+      .vbar { display: none; }
+      body { padding-bottom: 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="round">
+    <input class="vswitch" type="radio" name="variant" id="v1" checked aria-label="Variant 1: replay pipeline">
+    <input class="vswitch" type="radio" name="variant" id="v2" aria-label="Variant 2: policy hub">
+    <input class="vswitch" type="radio" name="variant" id="v3" aria-label="Variant 3: overview">
+    <input class="vswitch" type="radio" name="variant" id="v4" aria-label="Variant 4: decision flowchart">
+
+    <!-- ============ POSITION 1: parametric data flow ============ -->
+    <section class="variant" data-position="1" aria-label="Variant 1 of 4">
+      <p class="eyebrow">Data flow · 1 of 4 · replay pipeline · recommended</p>
+      <h1>Jev routing POC: what we ran, what it proved</h1>
+      <p class="tradeoff"><strong>Replay pipeline:</strong> the two evidence tracks (customer usage export, live v0 chats) converge into the policy and the priced savings. Costs: live-path detail (fail-safe, escalation) is compressed to sublabels.</p>
+      <figure>
+      <svg viewBox="0 0 728 376" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="jev-exp-v1-title jev-exp-v1-desc">
+        <title id="jev-exp-v1-title">Jev routing experiments · replay pipeline</title>
+        <desc id="jev-exp-v1-desc">A data flow of the routing POC experiments: the customer usage export and live v0 chats feed Jev classification and the routing policy; tier re-pricing and a cache-cost probe produce a savings model worth 12.9 percent per month.</desc>
+        <defs>
+          <pattern id="jev-exp-v1-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(32,32,32,0.10)"/></pattern>
+          <marker id="jev-exp-v1-arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#646464"/></marker>
+          <marker id="jev-exp-v1-arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#ea2804"/></marker>
+        </defs>
+        <rect width="728" height="376" fill="#fcfcfc"/>
+        <rect width="728" height="376" fill="url(#jev-exp-v1-dots)"/>
+        <rect x="0" y="36" width="728" height="80" fill="rgba(32,32,32,0.018)"/>
+        <rect x="0" y="196" width="728" height="80" fill="rgba(32,32,32,0.018)"/>
+
+        <!-- arrows (before nodes) -->
+        <path d="M246,228 L300,228 Q308,228 308,220 L308,188" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+        <path d="M246,76 L524,76 Q532,76 532,84 L532,124" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+        <path d="M358,156 L370,156" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+        <path d="M470,156 L482,156" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+        <path d="M246,248 L482,248" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+        <path d="M582,156 L612,156 Q620,156 620,148 L620,108" fill="none" stroke="#ea2804" stroke-width="1.2" marker-end="url(#jev-exp-v1-arr-accent)"/>
+        <path d="M582,236 L652,236 Q660,236 660,228 L660,108" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/>
+
+        <!-- accent arrow label, masked, on the free vertical segment -->
+        <rect x="626" y="124" width="28" height="12" rx="2" fill="#fcfcfc"/>
+        <text x="640" y="133" class="arrow-label">PRICED</text>
+
+        <!-- header: step chips -->
+        <g>
+          <rect x="180" y="6" width="32" height="16" rx="8" fill="rgba(32,32,32,0.12)"/><text x="196" y="17" class="step-number">01</text><text x="196" y="33" class="step-label">COLLECT</text>
+          <rect x="292" y="6" width="32" height="16" rx="8" fill="rgba(32,32,32,0.12)"/><text x="308" y="17" class="step-number">02</text><text x="308" y="33" class="step-label">CLASSIFY</text>
+          <rect x="404" y="6" width="32" height="16" rx="8" fill="rgba(32,32,32,0.12)"/><text x="420" y="17" class="step-number">03</text><text x="420" y="33" class="step-label">DECIDE</text>
+          <rect x="516" y="6" width="32" height="16" rx="8" fill="rgba(32,32,32,0.12)"/><text x="532" y="17" class="step-number">04</text><text x="532" y="33" class="step-label">MEASURE</text>
+          <rect x="628" y="6" width="32" height="16" rx="8" fill="rgba(234,40,4,0.20)"/><text x="644" y="17" class="step-number focal-text">05</text><text x="644" y="33" class="step-label focal-text">PROVE</text>
+        </g>
+        <line x1="0" y1="36" x2="728" y2="36" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="116" x2="728" y2="116" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="196" x2="728" y2="196" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="276" x2="728" y2="276" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="36" x2="140" y2="276" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+
+        <!-- lane labels -->
+        <text x="70" y="72" class="lane-label">CUSTOMER</text><text x="70" y="84" class="lane-label">USAGE</text>
+        <text x="70" y="152" class="lane-label">ROUTING</text><text x="70" y="164" class="lane-label">POC</text>
+        <text x="70" y="232" class="lane-label">V0</text><text x="70" y="244" class="lane-label">PLATFORM</text>
+
+        <!-- nodes -->
+        <rect x="146" y="44" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <rect x="150" y="48" width="18" height="10" rx="3" fill="rgba(32,32,32,0.12)"/><text x="159" y="56" class="role-text">CUS</text>
+        <text x="196" y="70" class="node-title">Usage export</text>
+        <text x="196" y="82" class="node-sub">2,775 msgs · 426 chats</text>
+        <text x="196" y="94" class="node-tool">usage-export.csv</text>
+        <rect x="150" y="98" width="16" height="8" rx="3" fill="#b8915a"/><text x="158" y="104.5" class="chip-text">DB</text>
+
+        <rect x="146" y="204" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <rect x="150" y="208" width="18" height="10" rx="3" fill="rgba(32,32,32,0.12)"/><text x="159" y="216" class="role-text">V0P</text>
+        <text x="196" y="230" class="node-title">Live chat path</text>
+        <text x="196" y="242" class="node-sub">octolog team</text>
+        <text x="196" y="254" class="node-tool">v0 Platform API</text>
+        <rect x="150" y="258" width="16" height="8" rx="3" fill="#4a7c59"/><text x="158" y="264.5" class="chip-text">LS</text>
+
+        <rect x="258" y="124" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <rect x="262" y="128" width="18" height="10" rx="3" fill="rgba(32,32,32,0.12)"/><text x="271" y="136" class="role-text">POC</text>
+        <text x="308" y="150" class="node-title">Jev classify</text>
+        <text x="308" y="162" class="node-sub">426 calls · $0.02</text>
+        <text x="308" y="174" class="node-tool">Gateway · typesafe-ai</text>
+        <rect x="262" y="178" width="16" height="8" rx="3" fill="#4a7c59"/><text x="270" y="184.5" class="chip-text">LS</text>
+        <rect x="338" y="178" width="16" height="8" rx="3" fill="#b8915a"/><text x="346" y="184.5" class="chip-text">TB</text>
+
+        <rect x="370" y="124" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <rect x="374" y="128" width="18" height="10" rx="3" fill="rgba(32,32,32,0.12)"/><text x="383" y="136" class="role-text">POC</text>
+        <text x="420" y="150" class="node-title">Policy decide</text>
+        <text x="420" y="162" class="node-sub">1 model per chat</text>
+        <text x="420" y="174" class="node-tool">fallback: v0-pro</text>
+        <rect x="374" y="178" width="16" height="8" rx="3" fill="#b8915a"/><text x="382" y="184.5" class="chip-text">TB</text>
+        <rect x="450" y="178" width="16" height="8" rx="3" fill="#b8915a"/><text x="458" y="184.5" class="chip-text">TB</text>
+
+        <rect x="482" y="124" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <rect x="486" y="128" width="18" height="10" rx="3" fill="rgba(32,32,32,0.12)"/><text x="495" y="136" class="role-text">POC</text>
+        <text x="532" y="150" class="node-title">Tier re-price</text>
+        <text x="532" y="162" class="node-sub">same tokens, new rates</text>
+        <text x="532" y="174" class="node-tool">replay-usage.mts</text>
+        <rect x="486" y="178" width="16" height="8" rx="3" fill="#5e7a9b"/><text x="494" y="184.5" class="chip-text">DB</text>
+        <rect x="562" y="178" width="16" height="8" rx="3" fill="#9c6b50"/><text x="570" y="184.5" class="chip-text">FL</text>
+
+        <rect x="482" y="204" width="100" height="64" rx="2" fill="rgba(184,84,80,0.06)" stroke="rgba(184,84,80,0.35)" stroke-width="1"/>
+        <rect x="486" y="208" width="18" height="10" rx="3" fill="rgba(184,84,80,0.18)"/><text x="495" y="216" class="role-text" fill="#b85450">V0P</text>
+        <text x="532" y="230" class="node-title" fill="#b85450">Cache-spike probe</text>
+        <text x="532" y="242" class="node-sub">mini $0.13 · max $0.64</text>
+        <text x="532" y="254" class="node-tool">usage.creditsCost</text>
+        <rect x="486" y="258" width="16" height="8" rx="3" fill="#4a7c59"/><text x="494" y="264.5" class="chip-text">LS</text>
+        <rect x="562" y="258" width="16" height="8" rx="3" fill="#9c6b50"/><text x="570" y="264.5" class="chip-text">FL</text>
+
+        <rect x="594" y="44" width="100" height="64" rx="2" fill="rgba(234,40,4,0.08)" stroke="#ea2804" stroke-width="1"/>
+        <rect x="598" y="48" width="18" height="10" rx="3" fill="rgba(234,40,4,0.18)"/><text x="607" y="56" class="role-text" fill="#cd2200">CUS</text>
+        <text x="644" y="70" class="node-title">Savings model</text>
+        <text x="644" y="82" class="node-sub">v0.2 rule: 12.9%</text>
+        <text x="644" y="94" class="node-tool">$793/mo at current spend</text>
+        <rect x="598" y="98" width="16" height="8" rx="3" fill="#9c6b50"/><text x="606" y="104.5" class="chip-text">FL</text>
+
+        <!-- legend -->
+        <text x="128" y="296" class="legend-label">STEPS</text>
+        <rect x="140" y="288" width="24" height="12" rx="6" fill="rgba(32,32,32,0.12)"/><text x="152" y="297" class="step-number">01</text><text x="172" y="297" class="legend-text">Collect</text>
+        <rect x="220" y="288" width="24" height="12" rx="6" fill="rgba(32,32,32,0.12)"/><text x="232" y="297" class="step-number">02</text><text x="252" y="297" class="legend-text">Classify</text>
+        <rect x="300" y="288" width="24" height="12" rx="6" fill="rgba(32,32,32,0.12)"/><text x="312" y="297" class="step-number">03</text><text x="332" y="297" class="legend-text">Decide</text>
+        <rect x="380" y="288" width="24" height="12" rx="6" fill="rgba(32,32,32,0.12)"/><text x="392" y="297" class="step-number">04</text><text x="412" y="297" class="legend-text">Measure</text>
+        <rect x="460" y="288" width="24" height="12" rx="6" fill="rgba(234,40,4,0.20)"/><text x="472" y="297" class="step-number focal-text">05</text><text x="492" y="297" class="legend-text">Prove</text>
+
+        <text x="128" y="317" class="legend-label">ARROWS</text>
+        <line x1="140" y1="314" x2="168" y2="314" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v1-arr-muted)"/><text x="176" y="317" class="legend-text">data hand-off</text>
+        <line x1="270" y1="314" x2="298" y2="314" stroke="#ea2804" stroke-width="1.2" marker-end="url(#jev-exp-v1-arr-accent)"/><text x="306" y="317" class="legend-text">focal result</text>
+
+        <text x="128" y="339" class="legend-label">PAYLOADS</text>
+        <rect x="140" y="331" width="16" height="8" rx="3" fill="#5e7a9b"/><text x="148" y="337.5" class="chip-text">DB</text><text x="164" y="339" class="legend-text">dataset</text>
+        <rect x="210" y="331" width="16" height="8" rx="3" fill="#b8915a"/><text x="218" y="337.5" class="chip-text">TB</text><text x="234" y="339" class="legend-text">decisions</text>
+        <rect x="300" y="331" width="16" height="8" rx="3" fill="#9c6b50"/><text x="308" y="337.5" class="chip-text">FL</text><text x="324" y="339" class="legend-text">priced export</text>
+        <rect x="410" y="331" width="16" height="8" rx="3" fill="#4a7c59"/><text x="418" y="337.5" class="chip-text">LS</text><text x="434" y="339" class="legend-text">live stream</text>
+
+        <text x="128" y="361" class="legend-label">FLAGS</text>
+        <rect x="140" y="353" width="10" height="10" rx="2" fill="rgba(184,84,80,0.06)" stroke="rgba(184,84,80,0.35)"/><text x="158" y="361" class="legend-text">cost warning (cache premium measured live)</text>
+      </svg>
+      </figure>
+    </section>
+
+    <!-- ============ POSITION 2: hub ============ -->
+    <section class="variant" data-position="2" aria-label="Variant 2 of 4">
+      <p class="eyebrow">Data flow · 2 of 4 · policy hub</p>
+      <h1>Jev routing POC: what we ran, what it proved</h1>
+      <p class="tradeoff"><strong>Policy hub:</strong> the routing decision is the hub; both evidence tracks fan in and the three measured outcomes fan out. Costs: reads less like a pipeline; stage order is implicit.</p>
+      <figure>
+      <svg viewBox="0 0 1000 830" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="jev-exp-v2-title jev-exp-v2-desc">
+        <title id="jev-exp-v2-title">Jev routing experiments · policy hub</title>
+        <desc id="jev-exp-v2-desc">A hub diagram: the usage export, live chat prompts, and live turn costs fan into the Jev and policy decision, which fans out to the v0-mini savings win, the proven v0-pro fail-safe, and the measured cache premium of escalation.</desc>
+        <defs>
+          <pattern id="jev-exp-v2-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(32,32,32,0.10)"/></pattern>
+          <marker id="jev-exp-v2-arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#646464"/></marker>
+          <marker id="jev-exp-v2-arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#ea2804"/></marker>
+        </defs>
+        <rect width="1000" height="830" fill="#fcfcfc"/>
+        <rect width="1000" height="830" fill="url(#jev-exp-v2-dots)"/>
+
+        <!-- arrows first -->
+        <path d="M304,408 L428,408 Q436,408 436,416 L436,520" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v2-arr-muted)"/>
+        <path d="M304,552 L416,552" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v2-arr-muted)"/>
+        <path d="M304,696 L436,696 Q444,696 444,688 L444,584" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v2-arr-muted)"/>
+        <path d="M592,536 L696,536 Q704,536 704,528 L704,440" fill="none" stroke="#ea2804" stroke-width="1.2" marker-end="url(#jev-exp-v2-arr-accent)"/>
+        <path d="M592,552 L704,552" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v2-arr-muted)"/>
+        <path d="M592,568 L696,568 Q704,568 704,576 L704,688" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v2-arr-muted)"/>
+
+        <rect x="600" y="518" width="68" height="12" rx="2" fill="#fcfcfc"/>
+        <text x="634" y="527" class="arrow-label">1 MODEL / CHAT</text>
+
+        <!-- sources -->
+        <rect x="204" y="376" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="254" y="402" class="node-title">Usage export</text>
+        <text x="254" y="414" class="node-sub">2,775 msgs · 426 chats</text>
+        <text x="254" y="426" class="node-tool">usage-export.csv</text>
+
+        <rect x="204" y="520" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="254" y="546" class="node-title">First prompts</text>
+        <text x="254" y="558" class="node-sub">fetched per chat</text>
+        <text x="254" y="570" class="node-tool">GET /v2/chats/{id}/messages</text>
+
+        <rect x="204" y="664" width="100" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="254" y="690" class="node-title">Live turns</text>
+        <text x="254" y="702" class="node-sub">octolog team e2e</text>
+        <text x="254" y="714" class="node-tool">usage.creditsCost</text>
+
+        <!-- hub -->
+        <rect x="416" y="520" width="176" height="64" rx="2" fill="rgba(234,40,4,0.08)" stroke="#ea2804" stroke-width="1"/>
+        <text x="504" y="546" class="node-title">Jev + policy hub</text>
+        <text x="504" y="558" class="node-sub">3 questions · one call per chat</text>
+        <text x="504" y="570" class="node-tool">confidence, proceed, complexity</text>
+
+        <!-- outcomes -->
+        <rect x="704" y="388" width="140" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="774" y="414" class="node-title">v0-mini win</text>
+        <text x="774" y="426" class="node-sub">37 chats · 278 msgs</text>
+        <text x="774" y="438" class="node-tool">12.9% · $793/mo</text>
+
+        <rect x="704" y="520" width="140" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="774" y="546" class="node-title">Fail-safe proven</text>
+        <text x="774" y="558" class="node-sub">Gateway 403 in the wild:</text>
+        <text x="774" y="570" class="node-tool">fell back to v0-pro</text>
+
+        <rect x="704" y="656" width="140" height="64" rx="2" fill="rgba(184,84,80,0.06)" stroke="rgba(184,84,80,0.35)" stroke-width="1"/>
+        <text x="774" y="682" class="node-title" fill="#b85450">Cache premium</text>
+        <text x="774" y="694" class="node-sub">escalation turn $0.64</text>
+        <text x="774" y="706" class="node-tool">vs $0.13 on mini: 25x write</text>
+
+        <!-- legend -->
+        <line x1="204" y1="768" x2="844" y2="768" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <text x="204" y="790" class="legend-label">READ</text>
+        <text x="204" y="806" class="legend-text">left: evidence sources · center: the decision · right: measured outcomes · red border: cost warning · accent: the win</text>
+      </svg>
+      </figure>
+    </section>
+
+    <!-- ============ POSITION 3: overview ============ -->
+    <section class="variant" data-position="3" aria-label="Variant 3 of 4">
+      <p class="eyebrow">Data flow · 3 of 4 · overview</p>
+      <h1>Jev routing POC: what we ran, what it proved</h1>
+      <p class="tradeoff"><strong>Overview:</strong> five stations, one number each; fits a Slack message. Costs: drops the fail-safe story and the cache probe detail.</p>
+      <figure>
+      <svg viewBox="0 0 1100 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="jev-exp-v3-title jev-exp-v3-desc">
+        <title id="jev-exp-v3-title">Jev routing experiments · overview</title>
+        <desc id="jev-exp-v3-desc">A five-station overview: customer usage data is classified by Jev, routed by policy, and re-priced at tier rates to produce a 12.9 percent savings projection, with the live proofs of end-to-end routing, fail-safe fallback, and escalation cost shown below.</desc>
+        <defs>
+          <pattern id="jev-exp-v3-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(32,32,32,0.10)"/></pattern>
+          <marker id="jev-exp-v3-arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#646464"/></marker>
+          <marker id="jev-exp-v3-arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#ea2804"/></marker>
+        </defs>
+        <rect width="1100" height="800" fill="#fcfcfc"/>
+        <rect width="1100" height="800" fill="url(#jev-exp-v3-dots)"/>
+
+        <path d="M316,550 L432,550" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v3-arr-muted)"/>
+        <path d="M592,550 L708,550" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v3-arr-muted)"/>
+        <path d="M868,550 L912,550" fill="none" stroke="#ea2804" stroke-width="1.2" marker-end="url(#jev-exp-v3-arr-accent)"/>
+
+        <!-- station 1 -->
+        <rect x="156" y="510" width="160" height="80" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="236" y="540" class="node-title">Customer usage</text>
+        <text x="236" y="554" class="node-sub">2,775 messages · 426 chats</text>
+        <text x="236" y="570" class="node-tool">actual: $6,167 per period</text>
+        <!-- station 2 -->
+        <rect x="432" y="510" width="160" height="80" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="512" y="540" class="node-title">Jev classification</text>
+        <text x="512" y="554" class="node-sub">first prompt per chat</text>
+        <text x="512" y="570" class="node-tool">426 calls · $0.02 total</text>
+        <!-- station 3 -->
+        <rect x="708" y="510" width="160" height="80" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="788" y="540" class="node-title">Policy, then re-price</text>
+        <text x="788" y="554" class="node-sub">same tokens, tier rates</text>
+        <text x="788" y="570" class="node-tool">v0.1.0: 5.5% · v0.2: 12.9%</text>
+        <!-- focal -->
+        <rect x="920" y="510" width="160" height="80" rx="2" fill="rgba(234,40,4,0.08)" stroke="#ea2804" stroke-width="1"/>
+        <text x="1000" y="540" class="node-title">Projected win</text>
+        <text x="1000" y="554" class="node-sub">$793 per month</text>
+        <text x="1000" y="570" class="node-tool">37 chats move to v0-mini</text>
+
+        <!-- second row: live-path proof -->
+        <rect x="156" y="652" width="160" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="236" y="678" class="node-title">Live e2e proof</text>
+        <text x="236" y="692" class="node-sub">prompt → Jev → mini chat</text>
+        <text x="236" y="708" class="node-tool">routing metadata in chat</text>
+        <rect x="432" y="652" width="160" height="64" rx="2" fill="#fcfcfc" stroke="rgba(32,32,32,0.25)" stroke-width="1"/>
+        <text x="512" y="678" class="node-title">Fail-safe proof</text>
+        <text x="512" y="692" class="node-sub">Gateway 403 mid-run:</text>
+        <text x="512" y="708" class="node-tool">fell back to v0-pro</text>
+        <rect x="708" y="652" width="160" height="64" rx="2" fill="rgba(184,84,80,0.06)" stroke="rgba(184,84,80,0.35)" stroke-width="1"/>
+        <text x="788" y="678" class="node-title" fill="#b85450">Escalation price</text>
+        <text x="788" y="692" class="node-sub">$0.64 max vs $0.13 mini</text>
+        <text x="788" y="708" class="node-tool">cache write: 25x premium</text>
+        <path d="M316,684 L432,684" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v3-arr-muted)"/>
+        <path d="M592,684 L708,684" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v3-arr-muted)"/>
+
+        <line x1="156" y1="736" x2="1080" y2="736" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <text x="156" y="752" class="legend-text">top row: offline replay of the usage export · bottom row: live proofs on the octolog team · red border: measured cost warning</text>
+      </svg>
+      </figure>
+    </section>
+
+    <!-- ============ POSITION 4: flowchart ============ -->
+    <section class="variant" data-position="4" aria-label="Variant 4 of 4">
+      <p class="eyebrow">Flowchart · 4 of 4 · decision path · different type</p>
+      <h1>Jev routing POC: what we ran, what it proved</h1>
+      <p class="tradeoff"><strong>Decision path:</strong> reads the same experiments as the routing decision itself, with measured chat counts at each branch. Costs: the replay methodology (fetch, classify, re-price) is invisible.</p>
+      <figure>
+      <svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="jev-exp-v4-title jev-exp-v4-desc">
+        <title id="jev-exp-v4-title">Jev routing experiments · decision path</title>
+        <desc id="jev-exp-v4-desc">A flowchart of the routing decision: an explicit model wins, otherwise Jev classifies the prompt, low confidence falls back to v0-pro, architecture or hard debugging goes to v0-max, and simple clear work goes to v0-mini, with measured chat counts from the replay at each outcome.</desc>
+        <defs>
+          <pattern id="jev-exp-v4-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(32,32,32,0.10)"/></pattern>
+          <marker id="jev-exp-v4-arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#646464"/></marker>
+          <marker id="jev-exp-v4-arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#ea2804"/></marker>
+        </defs>
+        <rect width="1000" height="760" fill="#fcfcfc"/>
+        <rect width="1000" height="760" fill="url(#jev-exp-v4-dots)"/>
+
+        <!-- arrows -->
+        <path d="M500,92 L500,132" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M576,188 L692,188" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M500,236 L500,268" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M500,348 L500,384" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M576,444 L692,444" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M500,504 L500,540" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+        <path d="M424,604 L320,604" fill="none" stroke="#ea2804" stroke-width="1.2" marker-end="url(#jev-exp-v4-arr-accent)"/>
+        <path d="M500,660 L500,692" fill="none" stroke="#646464" stroke-width="1" marker-end="url(#jev-exp-v4-arr-muted)"/>
+
+        <text x="600" y="180" class="fc-label">yes</text>
+        <text x="510" y="258" class="fc-label">no</text>
+        <text x="600" y="436" class="fc-label">no</text>
+        <text x="510" y="528" class="fc-label">yes</text>
+        <text x="368" y="596" class="fc-label">yes</text>
+        <text x="510" y="682" class="fc-label">no</text>
+
+        <!-- start -->
+        <rect x="420" y="60" width="160" height="32" rx="16" fill="#fcfcfc" stroke="#202020" stroke-width="1"/>
+        <text x="500" y="80" class="node-title">User opens a chat</text>
+
+        <!-- d1 -->
+        <rect x="424" y="140" width="152" height="96" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1" transform="rotate(45 500 188)"/>
+        <text x="500" y="184" class="node-title">explicit model</text>
+        <text x="500" y="196" class="node-title">picked?</text>
+        <rect x="700" y="156" width="180" height="64" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1"/>
+        <text x="790" y="182" class="node-title">Use it</text>
+        <text x="790" y="194" class="node-sub">max-fast: never auto-selected</text>
+        <text x="790" y="206" class="node-tool">user choice only</text>
+
+        <!-- classify -->
+        <rect x="410" y="268" width="180" height="80" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1"/>
+        <text x="500" y="294" class="node-title">Jev classifies</text>
+        <text x="500" y="306" class="node-sub">task type · complexity · proceed</text>
+        <text x="500" y="322" class="node-tool">one call per chat, $0.00005</text>
+
+        <!-- d2 -->
+        <rect x="424" y="384" width="152" height="120" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1" transform="rotate(45 500 444)"/>
+        <text x="500" y="440" class="node-title">confidence</text>
+        <text x="500" y="452" class="node-title">at least 0.5?</text>
+        <rect x="700" y="412" width="200" height="64" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1"/>
+        <text x="800" y="438" class="node-title">v0-pro, fail-safe</text>
+        <text x="800" y="450" class="node-sub">26 chats in replay · proven live</text>
+        <text x="800" y="462" class="node-tool">Gateway 403: fell back cleanly</text>
+
+        <!-- d3 -->
+        <rect x="424" y="540" width="152" height="128" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1" transform="rotate(45 500 604)"/>
+        <text x="500" y="588" class="node-title">simple and clear?</text>
+        <text x="500" y="600" class="node-title">complexity 2 or less,</text>
+        <text x="500" y="612" class="node-title">proceed 0.5 or more</text>
+        <rect x="140" y="572" width="180" height="64" rx="6" fill="rgba(234,40,4,0.08)" stroke="#ea2804" stroke-width="1"/>
+        <text x="230" y="598" class="node-title">v0-mini, the win</text>
+        <text x="230" y="610" class="node-sub">37 chats · 278 msgs per month</text>
+        <text x="230" y="622" class="node-tool">12.9% · $793/mo saved</text>
+
+        <!-- end -->
+        <rect x="400" y="692" width="200" height="48" rx="6" fill="#fcfcfc" stroke="#202020" stroke-width="1"/>
+        <text x="500" y="712" class="node-title">v0-pro, the default</text>
+        <text x="500" y="724" class="node-sub">358 chats · status-quo cost</text>
+
+        <!-- legend -->
+        <line x1="140" y1="560" x2="330" y2="560" stroke="rgba(32,32,32,0.12)" stroke-width="0.8"/>
+        <text x="140" y="544" class="legend-text">counts from the 426-chat replay · fail-safe path proven live on the octolog team</text>
+      </svg>
+      </figure>
+    </section>
+
+    <nav class="vbar" aria-label="Variant positions">
+      <label for="v1"><span class="pos">1 · pipeline</span><span class="dir">recommended</span></label>
+      <label for="v2"><span class="pos">2 · hub</span><span class="dir">decision centered</span></label>
+      <label for="v3"><span class="pos">3 · overview</span><span class="dir">density down</span></label>
+      <label for="v4"><span class="pos">4 · flowchart</span><span class="dir">different type</span></label>
+      <span class="hint">click a position, then use arrow keys</span>
+    </nav>
+  </main>
+</body>
+</html>

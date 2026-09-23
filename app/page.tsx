@@ -12,13 +12,13 @@ export default function Home() {
       <header className="flex items-baseline justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Jev → v0 Model Routing</h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Jev classifies each new chat once; the model is fixed for the chat lifetime. Fork a
             template and small changes run cheap.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/orgs" className="text-xs text-neutral-500 underline">
+          <Link href="/orgs" className="text-xs text-neutral-500 underline dark:text-neutral-400">
             Organizations
           </Link>
           <span className="rounded-md bg-neutral-900 px-2 py-1 font-mono text-xs text-white">
