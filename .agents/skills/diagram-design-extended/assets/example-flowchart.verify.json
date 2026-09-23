@@ -1,0 +1,83 @@
+{
+  "tier": "T1",
+  "t1_blocking_reason": null,
+  "profile": {
+    "source": "default",
+    "path": "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/references/style-guide.md",
+    "name": "Default",
+    "slug": "default",
+    "opinions": {
+      "accent_budget": 2,
+      "radius_range": [
+        0,
+        10
+      ],
+      "shadow_policy": "none",
+      "dark_mode": false,
+      "glow": false
+    },
+    "inherited": []
+  },
+  "checks": {
+    "profile_gates": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": ""
+    },
+    "self_check": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "OK /Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart.html"
+    },
+    "check_slop": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "OK /Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart.html\nSummary: 1 file(s), 0 error(s), 0 warning(s)."
+    },
+    "verify-geometry": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "Summary: 1 file(s) checked, 0 finding(s)."
+    },
+    "card-lines": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": "Summary: 1 file(s) checked, 0 finding(s)."
+    },
+    "verify-motion": {
+      "status": "skipped",
+      "reason": "no motion markup"
+    },
+    "verify_browser": {
+      "status": "fail",
+      "exit_code": 1,
+      "output": "[PASS] rendered card-overlap (0 finding(s))\n[PASS] rendered connector-transit (0 finding(s))\n[PASS] rendered label-collision (0 finding(s))\nRENDERED_CHECKS_JSON: {\"card-overlap\": [], \"connector-transit\": [], \"label-collision\": []}\nFAIL horizontal overflow at 320px: scrollWidth 932 > 320\nFAIL horizontal overflow at 375px: scrollWidth 932 > 375\nFAIL horizontal overflow at 414px: scrollWidth 932 > 414\nFAIL horizontal overflow at 768px: scrollWidth 932 > 768\nScreenshots: /Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots\nSummary: 4 failure(s), 0 warning(s). Review the screenshots against quality-hardening.md \u00a77 before declaring done."
+    },
+    "rendered-card-overlap": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": ""
+    },
+    "rendered-connector-transit": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": ""
+    },
+    "rendered-label-collision": {
+      "status": "pass",
+      "exit_code": 0,
+      "output": ""
+    }
+  },
+  "fix_cycles": 0,
+  "component_library": null,
+  "output_files": [
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart.html",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots/example-flowchart-1440w.png",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots/example-flowchart-320w.png",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots/example-flowchart-375w.png",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots/example-flowchart-414w.png",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart-screenshots/example-flowchart-768w.png",
+    "/Users/diegodemiguel/Development/Skills Repos/diagram-profiles/skills/diagram-design/assets/example-flowchart.verify.json"
+  ]
+}

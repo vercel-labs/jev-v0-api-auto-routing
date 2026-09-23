@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "diagram-design-extended": {
+      "source": "../../Skills Repos/diagram-design-extended",
+      "sourceType": "local",
+      "computedHash": "9e3c1241709f6284b7a8dc122e96b3de075e42b5b8618df462f46cf4c601b6b9"
+    }
+  }
+}

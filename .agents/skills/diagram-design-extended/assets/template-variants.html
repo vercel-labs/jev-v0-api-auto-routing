@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagram · variant round</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;   /* white-smoke */
+      --color-ink:     #2d3142;   /* jet-black */
+      --color-muted:   #4f5d75;   /* blue-slate */
+      --color-accent:  #eb6c36;   /* atomic-tangerine */
+      --color-rule:    rgba(45,49,66,0.12);
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      padding: 3rem 2rem 7rem;   /* bottom padding clears the fixed bar */
+      display: flex;
+      justify-content: center;
+    }
+
+    .round { max-width: 1200px; width: 100%; }
+
+    /* ===== switcher mechanics — zero JavaScript =====
+       Radio inputs precede the panels; :checked + general sibling
+       combinator reveals exactly one panel. Arrow keys flip natively
+       once any position in the group has focus. */
+    .vswitch {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+    }
+    .variant { display: none; }
+    #v1:checked ~ .variant[data-position="1"],
+    #v2:checked ~ .variant[data-position="2"],
+    #v3:checked ~ .variant[data-position="3"],
+    #v4:checked ~ .variant[data-position="4"] { display: block; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+    .tradeoff {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 68ch;
+    }
+    .tradeoff strong { color: var(--color-ink); font-weight: 600; }
+
+    figure { overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; display: block; }
+
+    /* ===== position bar ===== */
+    .vbar {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid var(--color-rule);
+      border-radius: 10px;
+      background: var(--color-paper);
+      box-shadow: 0 4px 24px rgba(45,49,66,0.14);
+      max-width: calc(100vw - 32px);
+    }
+    .vbar label {
+      display: block;
+      padding: 8px 14px;
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .vbar label:hover { border-color: var(--color-muted); }
+    .vbar .pos {
+      display: block;
+      font: 600 12px/1.2 var(--font-sans);
+      color: var(--color-ink);
+    }
+    .vbar .dir {
+      display: block;
+      font: 400 9px/1.4 var(--font-mono);
+      letter-spacing: 0.06em;
+      color: var(--color-muted);
+      text-transform: uppercase;
+    }
+    #v1:checked ~ .vbar label[for="v1"],
+    #v2:checked ~ .vbar label[for="v2"],
+    #v3:checked ~ .vbar label[for="v3"],
+    #v4:checked ~ .vbar label[for="v4"] {
+      border-color: var(--color-accent);
+      background: rgba(235,108,54,0.08);
+    }
+    .vswitch:focus-visible ~ .vbar label { outline: none; }
+    #v1:focus-visible ~ .vbar label[for="v1"],
+    #v2:focus-visible ~ .vbar label[for="v2"],
+    #v3:focus-visible ~ .vbar label[for="v3"],
+    #v4:focus-visible ~ .vbar label[for="v4"] {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .vbar .hint {
+      align-self: center;
+      padding: 0 10px 0 6px;
+      border-left: 1px solid var(--color-rule);
+      margin-left: 4px;
+      font: 500 9px/1.5 var(--font-mono);
+      color: var(--color-muted);
+      max-width: 18ch;
+    }
+
+    @media print {
+      .vbar { display: none; }
+      body { padding-bottom: 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="round">
+    <!--
+      VARIANT ROUND TEMPLATE — four complete diagrams, one file, no scripts.
+      Replace [diagram-slug] everywhere. Each panel is a full §9-compliant
+      diagram: own accessible SVG, own title/desc with position-suffixed IDs.
+      Position 1 is always your recommended plan. See references/variants.md.
+    -->
+    <input class="vswitch" type="radio" name="variant" id="v1" checked aria-label="Variant 1: [direction name]">
+    <input class="vswitch" type="radio" name="variant" id="v2" aria-label="Variant 2: [direction name]">
+    <input class="vswitch" type="radio" name="variant" id="v3" aria-label="Variant 3: [direction name]">
+    <input class="vswitch" type="radio" name="variant" id="v4" aria-label="Variant 4: [direction name]">
+
+    <section class="variant" data-position="1" aria-label="Variant 1 of 4">
+      <p class="eyebrow">[Type] · 1 of 4 · [direction name] · recommended</p>
+      <h1>[Diagram title]</h1>
+      <p class="tradeoff"><strong>[Direction name]:</strong> [what this take chooses to emphasize]. Costs: [what it gives up].</p>
+      <figure>
+      <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="[diagram-slug]-v1-title [diagram-slug]-v1-desc">
+        <title id="[diagram-slug]-v1-title">[Diagram title] · [direction name]</title>
+        <desc id="[diagram-slug]-v1-desc">[One sentence describing what this variant shows and how.]</desc>
+        <defs>
+          <marker id="[diagram-slug]-v1-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <!-- variant 1 content -->
+      </svg>
+      </figure>
+    </section>
+
+    <section class="variant" data-position="2" aria-label="Variant 2 of 4">
+      <p class="eyebrow">[Type] · 2 of 4 · [direction name]</p>
+      <h1>[Diagram title]</h1>
+      <p class="tradeoff"><strong>[Direction name]:</strong> [what this take chooses to emphasize]. Costs: [what it gives up].</p>
+      <figure>
+      <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="[diagram-slug]-v2-title [diagram-slug]-v2-desc">
+        <title id="[diagram-slug]-v2-title">[Diagram title] · [direction name]</title>
+        <desc id="[diagram-slug]-v2-desc">[One sentence describing what this variant shows and how.]</desc>
+        <defs>
+          <marker id="[diagram-slug]-v2-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <!-- variant 2 content -->
+      </svg>
+      </figure>
+    </section>
+
+    <section class="variant" data-position="3" aria-label="Variant 3 of 4">
+      <p class="eyebrow">[Type] · 3 of 4 · [direction name]</p>
+      <h1>[Diagram title]</h1>
+      <p class="tradeoff"><strong>[Direction name]:</strong> [what this take chooses to emphasize]. Costs: [what it gives up].</p>
+      <figure>
+      <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="[diagram-slug]-v3-title [diagram-slug]-v3-desc">
+        <title id="[diagram-slug]-v3-title">[Diagram title] · [direction name]</title>
+        <desc id="[diagram-slug]-v3-desc">[One sentence describing what this variant shows and how.]</desc>
+        <defs>
+          <marker id="[diagram-slug]-v3-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <!-- variant 3 content -->
+      </svg>
+      </figure>
+    </section>
+
+    <section class="variant" data-position="4" aria-label="Variant 4 of 4">
+      <p class="eyebrow">[Other type] · 4 of 4 · [direction name] · different type</p>
+      <h1>[Diagram title]</h1>
+      <p class="tradeoff"><strong>[Direction name]:</strong> reads the same content as a [other type]. Costs: [what it gives up].</p>
+      <figure>
+      <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="[diagram-slug]-v4-title [diagram-slug]-v4-desc">
+        <title id="[diagram-slug]-v4-title">[Diagram title] · [direction name]</title>
+        <desc id="[diagram-slug]-v4-desc">[One sentence describing what this variant shows and how.]</desc>
+        <defs>
+          <marker id="[diagram-slug]-v4-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <!-- variant 4 content -->
+      </svg>
+      </figure>
+    </section>
+
+    <nav class="vbar" aria-label="Variant positions">
+      <label for="v1"><span class="pos">1 · [direction]</span><span class="dir">recommended</span></label>
+      <label for="v2"><span class="pos">2 · [direction]</span><span class="dir">[axis it changes]</span></label>
+      <label for="v3"><span class="pos">3 · [direction]</span><span class="dir">[axis it changes]</span></label>
+      <label for="v4"><span class="pos">4 · [direction]</span><span class="dir">different type</span></label>
+      <span class="hint">click a position, then ←/→ flip</span>
+    </nav>
+  </main>
+</body>
+</html>
